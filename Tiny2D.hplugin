@@ -1,0 +1,8 @@
+{
+  "name": "Tiny2D",
+  "description": "Tiny2D is a renderer for 2D shapes, text, and basic 3D geometry in 3D space.",
+  "modules": [],
+  "plugins": [],
+  "reloadable": false,
+  "enabledByDefault": true
+}

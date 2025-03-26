@@ -1,0 +1,9 @@
+﻿Binaries
+
+*.vcxproj
+*.filters
+*.user
+
+Source/Tiny2D/Embeded/dxil
+Source/Tiny2D/Embeded/spirv
+
