@@ -24,7 +24,6 @@ module;
 
 #include "Embeded/dxil/box_main_ps.bin.h"
 #include "Embeded/dxil/box_main_vs.bin.h"
-#include "Embeded/dxil/box_main_gs.bin.h"
 
 #endif
 
@@ -45,7 +44,6 @@ module;
 
 #include "Embeded/spirv/box_main_ps.bin.h"
 #include "Embeded/spirv/box_main_vs.bin.h"
-#include "Embeded/spirv/box_main_gs.bin.h"
 
 #endif
 
