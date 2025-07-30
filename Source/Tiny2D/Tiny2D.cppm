@@ -110,7 +110,7 @@ export namespace Tiny2D {
 	struct ViewDesc
 	{
 		Math::float4x4 viewProj;
-		Math::uint2 viewSize = { 1920, 1080 };
+		Math::int2 viewSize = { 1920, 1080 };
 		nvrhi::Format renderTargetColorFormat = nvrhi::Format::RGBA8_UNORM;
 		uint8_t sampleCount = 4;
 	};

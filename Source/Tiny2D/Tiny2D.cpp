@@ -219,7 +219,7 @@ struct Framebuffer
 		framebufferHandle.Reset();
 	}
 
-	void Init(nvrhi::IDevice* device, Math::uint2 size, nvrhi::Format colorFormat, uint32_t sampleCount)
+	void Init(nvrhi::IDevice* device, Math::int2 size, nvrhi::Format colorFormat, uint32_t sampleCount)
 	{
 		Reset();
 
