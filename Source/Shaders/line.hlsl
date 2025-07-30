@@ -11,19 +11,19 @@ ConstantBuffer<ViewParms> viewParms : register(b0);
 struct VertexOutput
 {
     float4 position : SV_POSITION;
-    float3 color : COLOR;
+    float4 color : COLOR;
     float thickness : THICKNESS;
 };
 
 struct GeoOutput
 {
     float4 position : SV_POSITION;
-    float3 color : COLOR;
+    float4 color : COLOR;
 };
 
 VertexOutput main_vs(
 	in float3 position : POSITION,
-	in float3 color : COLOR,
+	in float4 color : COLOR,
 	in float thickness : THICKNESS
 )
 {
@@ -82,8 +82,8 @@ void main_gs(
 
 void main_ps(
     in GeoOutput input,
-	out float4 color : SV_Target0
+    out float4 color : SV_Target0
 )
 {
-    color = float4(input.color, 1.0f);
+    color = input.color;
 }

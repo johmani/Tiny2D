@@ -422,7 +422,7 @@ struct LinePass
 	struct LineVertex
 	{
 		Math::float3 position;
-		Math::float3 color;
+		Math::float4 color;
 		float thickness;
 	};
 
@@ -474,7 +474,7 @@ struct LinePass
 		{
 			nvrhi::VertexAttributeDesc attributes[] = {
 				{ "POSITION",   nvrhi::Format::RGB32_FLOAT,  1, 0, offsetof(LineVertex, position) , sizeof(LineVertex), false },
-				{ "COLOR",      nvrhi::Format::RGB32_FLOAT,  1, 1, offsetof(LineVertex, color)    , sizeof(LineVertex), false },
+				{ "COLOR",      nvrhi::Format::RGBA32_FLOAT, 1, 1, offsetof(LineVertex, color)    , sizeof(LineVertex), false },
 				{ "THICKNESS",  nvrhi::Format::R32_FLOAT,    1, 2, offsetof(LineVertex, thickness), sizeof(LineVertex), false },
 			};
 			inputLayout = device->createInputLayout(attributes, uint32_t(std::size(attributes)), vertexShader);
@@ -1245,7 +1245,7 @@ void Tiny2D::DrawLine(const LineDesc& desc)
 	lins.vertexCount += 2;
 }
 
-void Tiny2D::DrawLineList(Math::float3* points, uint32_t size, const Math::float3& color, float thickness)
+void Tiny2D::DrawLineList(Math::float3* points, uint32_t size, const Math::float4& color, float thickness)
 {
 	HE_ASSERT(points);
 
@@ -1277,12 +1277,12 @@ void Tiny2D::DrawLineList(Math::float3* points, uint32_t size, const Math::float
 	}
 }
 
-void Tiny2D::DrawLineList(std::span<Math::float3> span, const Math::float3& color, float thickness)
+void Tiny2D::DrawLineList(std::span<Math::float3> span, const Math::float4& color, float thickness)
 {
 	DrawLineList(span.data(), (uint32_t)span.size(), color, thickness);
 }
 
-void Tiny2D::DrawLineStrip(Math::float3* points, uint32_t size, const Math::float3& color, float thickness)
+void Tiny2D::DrawLineStrip(Math::float3* points, uint32_t size, const Math::float4& color, float thickness)
 {
 	HE_ASSERT(points);
 
@@ -1314,7 +1314,7 @@ void Tiny2D::DrawLineStrip(Math::float3* points, uint32_t size, const Math::floa
 	}
 }
 
-void Tiny2D::DrawLineStrip(std::span<Math::float3> span, const Math::float3& color, float thickness)
+void Tiny2D::DrawLineStrip(std::span<Math::float3> span, const Math::float4& color, float thickness)
 {
 	DrawLineStrip(span.data(), (uint32_t)span.size(), color, thickness);
 }

@@ -124,10 +124,10 @@ export namespace Tiny2D {
 	TINY2D_API const Stats& GetStats();
 
 	TINY2D_API void DrawLine(const LineDesc& desc);
-	TINY2D_API void DrawLineList(std::span<Math::float3> view, const Math::float3& color = { 1.0f, 1.0f, 1.0f }, float thickness = 1.0f);
-	TINY2D_API void DrawLineList(Math::float3* points, uint32_t size, const Math::float3& color = { 1.0f, 1.0f, 1.0f }, float thickness = 1.0f);
-	TINY2D_API void DrawLineStrip(std::span<Math::float3> view, const Math::float3& color = { 1.0f, 1.0f, 1.0f }, float thickness = 1.0f);
-	TINY2D_API void DrawLineStrip(Math::float3* points, uint32_t size, const Math::float3& color = { 1.0f, 1.0f, 1.0f }, float thickness = 1.0f);
+	TINY2D_API void DrawLineList(std::span<Math::float3> view, const Math::float4& color = { 1.0f, 1.0f, 1.0f , 1.0f }, float thickness = 1.0f);
+	TINY2D_API void DrawLineList(Math::float3* points, uint32_t size, const Math::float4& color = { 1.0f, 1.0f, 1.0f , 1.0f }, float thickness = 1.0f);
+	TINY2D_API void DrawLineStrip(std::span<Math::float3> view, const Math::float4& color = { 1.0f, 1.0f, 1.0f  , 1.0f }, float thickness = 1.0f);
+	TINY2D_API void DrawLineStrip(Math::float3* points, uint32_t size, const Math::float4& color = { 1.0f, 1.0f, 1.0f  , 1.0f }, float thickness = 1.0f);
 	TINY2D_API void DrawCircle(const CircleDesc& desc);
 	TINY2D_API void DrawQuad(const QuadDesc& desc);
 	TINY2D_API void DrawText(const TextDesc& desc);
