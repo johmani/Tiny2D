@@ -1122,9 +1122,15 @@ void Tiny2D::BeginScene(nvrhi::CommandListHandle commandList, const ViewDesc& de
 	}
 
 	// resize
-	const auto& rt = s_Data->framebuffer.renderTargets.color->getDesc();
+	const auto& rt = s_Data->framebuffer.color->getDesc();
 	if (rt.width != desc.viewSize.x || rt.height != desc.viewSize.y)
 	{
+		s_Data->line.pso.Reset();
+		s_Data->sprite.pso.Reset();
+		s_Data->circle.pso.Reset();
+		s_Data->text.pso.Reset();
+		s_Data->box.pso.Reset();
+
 		s_Data->framebuffer.Init(s_Data->device, { desc.viewSize.x, desc.viewSize.y }, desc.renderTargetColorFormat, desc.sampleCount);
 	}
 
