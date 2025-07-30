@@ -206,16 +206,18 @@ private:
 struct Framebuffer
 {
 	nvrhi::FramebufferHandle framebufferHandle;
-	Tiny2D::RenderTargets renderTargets;
+	nvrhi::TextureHandle color;
+	nvrhi::TextureHandle depth;
+	nvrhi::TextureHandle resolvedColor;
 	
 	operator bool() const { return  framebufferHandle; }
 	operator nvrhi::IFramebuffer*() const { return framebufferHandle.Get(); }
 
 	void Reset()
 	{
-		renderTargets.color.Reset();
-		renderTargets.resolvedColor.Reset();
-		renderTargets.depth.Reset();
+		color.Reset();
+		resolvedColor.Reset();
+		depth.Reset();
 		framebufferHandle.Reset();
 	}
 
@@ -240,7 +242,7 @@ struct Framebuffer
 			desc.isUAV = sampleCount == 1;
 			desc.format = colorFormat;
 			desc.debugName = "color";
-			renderTargets.color = device->createTexture(desc);
+			color = device->createTexture(desc);
 		}
 
 		{
@@ -261,9 +263,10 @@ struct Framebuffer
 			desc.initialState = nvrhi::ResourceStates::DepthWrite;
 			desc.clearValue = nvrhi::Color(1.0f);
 			desc.debugName = "Depth";
-			renderTargets.depth = device->createTexture(desc);
+			depth = device->createTexture(desc);
 		}
 
+		if(desc.sampleCount > 1)
 		{
 			desc.sampleCount = 1;
 			desc.initialState = nvrhi::ResourceStates::RenderTarget;
@@ -272,23 +275,27 @@ struct Framebuffer
 			desc.isUAV = true;
 			desc.isTypeless = false;
 			desc.debugName = "ResolvedColor";
-			renderTargets.resolvedColor = device->createTexture(desc);
+			resolvedColor = device->createTexture(desc);
+		}
+		else
+		{
+			resolvedColor = color;
 		}
 
 		{
 			nvrhi::FramebufferDesc fbDesc;
-			fbDesc.addColorAttachment(renderTargets.color);
-			fbDesc.setDepthAttachment(renderTargets.depth);
+			fbDesc.addColorAttachment(color);
+			fbDesc.setDepthAttachment(depth);
 			framebufferHandle = device->createFramebuffer(fbDesc);
 		}
 	}
 
 	void Clear(nvrhi::ICommandList* commandList)
 	{
-		const nvrhi::FormatInfo& depthFormatInfo = nvrhi::getFormatInfo(renderTargets.depth->getDesc().format);
+		const nvrhi::FormatInfo& depthFormatInfo = nvrhi::getFormatInfo(depth->getDesc().format);
 
-		commandList->clearDepthStencilTexture(renderTargets.depth, nvrhi::AllSubresources, true, 1.0f, depthFormatInfo.hasStencil, 0);
-		commandList->clearTextureFloat(renderTargets.color, nvrhi::AllSubresources, nvrhi::Color(0.f));
+		commandList->clearDepthStencilTexture(depth, nvrhi::AllSubresources, true, 1.0f, depthFormatInfo.hasStencil, 0);
+		commandList->clearTextureFloat(color, nvrhi::AllSubresources, nvrhi::Color(0.f));
 	}
 };
 
@@ -1188,16 +1195,21 @@ void Tiny2D::EndScene()
 		36
 	);
 
-	auto subresources = nvrhi::TextureSubresourceSet(0, 1, 0, 1);
-	s_Data->commandList->resolveTexture(
-		Tiny2D::GetRenderTargets().resolvedColor,
-		subresources,
-		Tiny2D::GetRenderTargets().color,
-		subresources
-	);
+	if (s_Data->framebuffer.color->getDesc().sampleCount > 1)
+	{
+		auto subresources = nvrhi::TextureSubresourceSet(0, 1, 0, 1);
+		s_Data->commandList->resolveTexture(
+			s_Data->framebuffer.resolvedColor,
+			subresources,
+			s_Data->framebuffer.color,
+			subresources
+		);
+	}
 }
 
-const Tiny2D::RenderTargets& Tiny2D::GetRenderTargets() { return s_Data->framebuffer.renderTargets; }
+nvrhi::ITexture* Tiny2D::GetColorTarget() { return s_Data->framebuffer.resolvedColor; }
+nvrhi::ITexture* Tiny2D::GetDepthTarget() { return s_Data->framebuffer.depth; }
+
 const Tiny2D::Stats& Tiny2D::GetStats() { HE_CORE_VERIFY(s_Data); return s_Data->stats; }
 
 //////////////////////////////////////////////////////////////////////////

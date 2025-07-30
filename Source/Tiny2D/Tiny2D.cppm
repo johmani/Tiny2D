@@ -100,13 +100,6 @@ export namespace Tiny2D {
 		float kerningOffset = 0.0f;
 	};
 
-	struct RenderTargets
-	{
-		nvrhi::TextureHandle resolvedColor;
-		nvrhi::TextureHandle color;
-		nvrhi::TextureHandle depth;
-	};
-
 	struct ViewDesc
 	{
 		Math::float4x4 viewProj;
@@ -120,7 +113,8 @@ export namespace Tiny2D {
 
 	TINY2D_API void BeginScene(nvrhi::CommandListHandle commandList, const ViewDesc& desc);
 	TINY2D_API void EndScene();
-	TINY2D_API const RenderTargets& GetRenderTargets();
+	TINY2D_API nvrhi::ITexture* GetColorTarget();
+	TINY2D_API nvrhi::ITexture* GetDepthTarget();
 	TINY2D_API const Stats& GetStats();
 
 	TINY2D_API void DrawLine(const LineDesc& desc);
