@@ -1,3 +1,3 @@
-[submodule "msdf-atlas-gen"]
-	path = msdf-atlas-gen
+[submodule "ThirdParty/msdf-atlas-gen"]
+	path = ThirdParty/msdf-atlas-gen
 	url = https://github.com/johmani/msdf-atlas-gen.git

@@ -1,6 +1,6 @@
 group "Plugins/Tiny2D"
 
-include "msdf-atlas-gen"
+include "ThirdParty/msdf-atlas-gen"
 
 project "Tiny2D"
     kind "SharedLib"
@@ -34,8 +34,8 @@ project "Tiny2D"
     includedirs
     {
        "Source/Tiny2D",
-       "msdf-atlas-gen/msdf-atlas-gen",
-       "msdf-atlas-gen/msdfgen",
+       "ThirdParty/msdf-atlas-gen/msdf-atlas-gen",
+       "ThirdParty/msdf-atlas-gen/msdfgen",
     }
     
     links
