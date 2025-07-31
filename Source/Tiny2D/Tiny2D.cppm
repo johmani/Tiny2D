@@ -1,7 +1,6 @@
-//	TODO :
-//		- multi view support
 
 export module Tiny2D;
+import HE;
 import Math;
 import nvrhi;
 import std;
@@ -23,10 +22,13 @@ import std;
 #   endif
 #endif
 
+struct ViewData;
+
 export namespace Tiny2D {
 
 	using std::uint32_t;
 	using std::uint8_t;
+	typedef HE::Ref<ViewData> ViewHandle;
 
 	struct Stats
 	{
@@ -111,11 +113,11 @@ export namespace Tiny2D {
 	TINY2D_API void Init(nvrhi::IDevice* device);
 	TINY2D_API void Shutdown();
 
-	TINY2D_API void BeginScene(nvrhi::CommandListHandle commandList, const ViewDesc& desc);
+	TINY2D_API void BeginScene(ViewHandle& viewHandle, nvrhi::ICommandList* commandList, const ViewDesc& desc);
 	TINY2D_API void EndScene();
-	TINY2D_API nvrhi::ITexture* GetColorTarget();
-	TINY2D_API nvrhi::ITexture* GetDepthTarget();
-	TINY2D_API const Stats& GetStats();
+	TINY2D_API nvrhi::ITexture* GetColorTarget(ViewHandle viewHandle);
+	TINY2D_API nvrhi::ITexture* GetDepthTarget(ViewHandle viewHandle);
+	TINY2D_API const Stats& GetStats(ViewHandle viewHandle);
 
 	TINY2D_API void DrawLine(const LineDesc& desc);
 	TINY2D_API void DrawLineList(std::span<Math::float3> view, const Math::float4& color = { 1.0f, 1.0f, 1.0f , 1.0f }, float thickness = 1.0f);

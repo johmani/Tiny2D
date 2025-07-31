@@ -243,6 +243,7 @@ struct Framebuffer
 			desc.format = colorFormat;
 			desc.debugName = "color";
 			color = device->createTexture(desc);
+			HE_VERIFY(color);
 		}
 
 		{
@@ -264,6 +265,7 @@ struct Framebuffer
 			desc.clearValue = nvrhi::Color(1.0f);
 			desc.debugName = "Depth";
 			depth = device->createTexture(desc);
+			HE_VERIFY(depth);
 		}
 
 		if(desc.sampleCount > 1)
@@ -276,6 +278,7 @@ struct Framebuffer
 			desc.isTypeless = false;
 			desc.debugName = "ResolvedColor";
 			resolvedColor = device->createTexture(desc);
+			HE_VERIFY(resolvedColor);
 		}
 		else
 		{
@@ -287,6 +290,7 @@ struct Framebuffer
 			fbDesc.addColorAttachment(color);
 			fbDesc.setDepthAttachment(depth);
 			framebufferHandle = device->createFramebuffer(fbDesc);
+			HE_VERIFY(framebufferHandle);
 		}
 	}
 
@@ -435,9 +439,6 @@ struct LinePass
 
 	nvrhi::IDevice* device;
 	nvrhi::BufferHandle vertexBuffer;
-	nvrhi::ShaderHandle vertexShader;
-	nvrhi::ShaderHandle pixelShader;
-	nvrhi::ShaderHandle geoShader;
 	nvrhi::InputLayoutHandle inputLayout;
 	nvrhi::GraphicsPipelineHandle pso;
 
@@ -446,36 +447,9 @@ struct LinePass
 	uint32_t maxLinesCount = 1024;
 	uint32_t vertexCount = 0;
 
-
-	void Init(nvrhi::IDevice* pDevice)
+	void Init(nvrhi::IDevice* pDevice, nvrhi::IShader* vertexShader)
 	{
 		device = pDevice;
-
-		// shaders
-		{
-			nvrhi::ShaderDesc vsDesc;
-			vsDesc.entryName = "main_vs";
-			vsDesc.debugName = "line_vs";
-			vsDesc.shaderType = nvrhi::ShaderType::Vertex;
-
-			nvrhi::ShaderDesc psDesc;
-			psDesc.entryName = "main_ps";
-			psDesc.debugName = "line_ps";
-			psDesc.shaderType = nvrhi::ShaderType::Pixel;
-
-			nvrhi::ShaderDesc gsDesc;
-			gsDesc.entryName = "main_gs";
-			gsDesc.debugName = "line_gs";
-			gsDesc.shaderType = nvrhi::ShaderType::Geometry;
-
-			vertexShader = RHI::CreateStaticShader(device, STATIC_SHADER(line_main_vs), nullptr, vsDesc);
-			pixelShader = RHI::CreateStaticShader(device, STATIC_SHADER(line_main_ps), nullptr, psDesc);
-			geoShader = RHI::CreateStaticShader(device, STATIC_SHADER(line_main_gs), nullptr, gsDesc);
-
-			HE_ASSERT(vertexShader);
-			HE_ASSERT(pixelShader);
-			HE_ASSERT(geoShader);
-		}
 
 		// vertex input
 		{
@@ -540,7 +514,10 @@ struct LinePass
 		nvrhi::ICommandList* commandList, 
 		nvrhi::IBindingLayout* viewBindingLayout, 
 		nvrhi::IBindingSet* viewBindingSets,
-		nvrhi::IFramebuffer* framebuffer
+		nvrhi::IFramebuffer* framebuffer,
+		nvrhi::IShader* vs,
+		nvrhi::IShader* ps,
+		nvrhi::IShader* gs
 	)
 	{
 		HE_PROFILE_SCOPE_NC("Tiny2D::LinesPass::End", RENDERING_COLOR);
@@ -558,9 +535,9 @@ struct LinePass
 		if (!pso)
 		{
 			nvrhi::GraphicsPipelineDesc psoDesc;
-			psoDesc.VS = vertexShader;
-			psoDesc.PS = pixelShader;
-			psoDesc.GS = geoShader;
+			psoDesc.VS = vs;
+			psoDesc.PS = ps;
+			psoDesc.GS = gs;
 			psoDesc.inputLayout = inputLayout;
 			psoDesc.bindingLayouts = { viewBindingLayout };
 			psoDesc.primType = nvrhi::PrimitiveType::LineList;
@@ -924,26 +901,37 @@ struct ViewBuffer
 {
 	Math::float4x4 ViewProjMatrix = Math::float4x4(1.0f);
 	Math::float2 viewSize;
+};
 
-	uint8_t padding[184];
+struct ViewData
+{
+	Framebuffer framebuffer;
+	nvrhi::BindingSetHandle bindingSet;
+	nvrhi::BufferHandle viewBuffer;
+
+	LinePass line;
+	InstancedPass<spriteAttributes> sprite;
+	InstancedPass<CircleAttributes> circle;
+	InstancedPass<TextAttributes> text;
+	InstancedPass<BoxAttributes> box;
+	Tiny2D::Stats stats;
 };
 
 struct RendererData
 {
 	nvrhi::IDevice* device;
-	nvrhi::CommandListHandle commandList;
-	Framebuffer framebuffer;
-
-	nvrhi::BufferHandle viewBuffer;
+	nvrhi::ICommandList* commandList;
+	
 	nvrhi::BindingLayoutHandle bindingLayout;
-	nvrhi::BindingSetHandle bindingSets;
 	nvrhi::BindingLayoutHandle bindlessLayout;
-	nvrhi::SamplerHandle anisotropicWrapSampler;
-
+	nvrhi::SamplerHandle sampler;
 	DescriptorTableManager descriptorTableManager;
 	
 	nvrhi::TextureHandle whiteTexture;
-	Ref<Font> defaultFont;
+
+	nvrhi::ShaderHandle lineVertexShader;
+	nvrhi::ShaderHandle linePixelShader;
+	nvrhi::ShaderHandle lineGeoShader;
 
 	nvrhi::ShaderHandle spriteVertexShader;
 	nvrhi::ShaderHandle spritePixelShader;
@@ -957,13 +945,8 @@ struct RendererData
 	nvrhi::ShaderHandle boxVertexShader;
 	nvrhi::ShaderHandle boxPixelShader;
 
-	LinePass line;
-	InstancedPass<spriteAttributes> sprite;
-	InstancedPass<CircleAttributes> circle;
-	InstancedPass<TextAttributes> text;
-	InstancedPass<BoxAttributes> box;
-
-	Tiny2D::Stats stats;
+	Ref<Font> defaultFont;
+	ViewData* fd;
 };
 
 static RendererData* s_Data = nullptr;
@@ -985,6 +968,22 @@ void Tiny2D::Init(nvrhi::IDevice* device)
 		nvrhi::ShaderDesc psDesc;
 		psDesc.shaderType = nvrhi::ShaderType::Pixel;
 		psDesc.entryName = "main_ps";
+
+		nvrhi::ShaderDesc gsDesc;
+		gsDesc.entryName = "main_gs";
+		gsDesc.shaderType = nvrhi::ShaderType::Geometry;
+
+		{
+			vsDesc.debugName = "line_vs";
+			psDesc.debugName = "line_ps";
+			gsDesc.debugName = "line_gs";
+			s_Data->lineVertexShader = RHI::CreateStaticShader(device, STATIC_SHADER(line_main_vs), nullptr, vsDesc);
+			s_Data->linePixelShader = RHI::CreateStaticShader(device, STATIC_SHADER(line_main_ps), nullptr, psDesc);
+			s_Data->lineGeoShader = RHI::CreateStaticShader(device, STATIC_SHADER(line_main_gs), nullptr, gsDesc);
+			HE_ASSERT(s_Data->lineVertexShader);
+			HE_ASSERT(s_Data->linePixelShader);
+			HE_ASSERT(s_Data->lineGeoShader);
+		}
 
 		{
 			vsDesc.debugName = "sprite_vs";
@@ -1036,39 +1035,30 @@ void Tiny2D::Init(nvrhi::IDevice* device)
 	}
 
 	{
-		auto samplerDesc = nvrhi::SamplerDesc()
+		auto desc = nvrhi::SamplerDesc()
 			.setAllFilters(false)
 			.setAllAddressModes(nvrhi::SamplerAddressMode::Clamp)
 			.setAllFilters(true)
 			.setAllAddressModes(nvrhi::SamplerAddressMode::Wrap)
 			.setMaxAnisotropy(16);
-		s_Data->anisotropicWrapSampler = device->createSampler(samplerDesc);
-		HE_VERIFY(s_Data->anisotropicWrapSampler);
+		s_Data->sampler = device->createSampler(desc);
+		HE_VERIFY(s_Data->sampler);
 	}
 
 	{
-		s_Data->viewBuffer = device->createBuffer(nvrhi::utils::CreateVolatileConstantBufferDesc(sizeof(ViewBuffer), "ViewBuffer", sizeof(ViewBuffer)));
-		HE_VERIFY(s_Data->viewBuffer);
-
-		bool res = nvrhi::utils::CreateBindingSetAndLayout(
-			device, 
-			nvrhi::ShaderType::All, 
-			0, 
-			{
-				.bindings = {
-					nvrhi::BindingSetItem::ConstantBuffer(0, s_Data->viewBuffer),
-					nvrhi::BindingSetItem::Sampler(0,s_Data->anisotropicWrapSampler)
-				}
-			},
-			s_Data->bindingLayout, 
-			s_Data->bindingSets
-		);
-		HE_VERIFY(res);
+		nvrhi::BindingLayoutDesc desc;
+		desc.visibility = nvrhi::ShaderType::All;
+		desc.bindings = {
+			nvrhi::BindingLayoutItem::VolatileConstantBuffer(0),
+			nvrhi::BindingLayoutItem::Sampler(0)
+		};
+		s_Data->bindingLayout = s_Data->device->createBindingLayout(desc);
+		HE_VERIFY(s_Data->bindingLayout);
 	}
 
 	{
-		nvrhi::CommandListHandle commandList = device->createCommandList();
-		commandList->open();
+		nvrhi::CommandListHandle cl = device->createCommandList();
+		cl->open();
 
 		{
 			uint32_t whiteImage = 0xffffffff;
@@ -1081,27 +1071,21 @@ void Tiny2D::Init(nvrhi::IDevice* device)
 			textureDesc.debugName = "whiteTexture";
 			s_Data->whiteTexture = device->createTexture(textureDesc);
 
-			commandList->beginTrackingTextureState(s_Data->whiteTexture, nvrhi::AllSubresources, nvrhi::ResourceStates::Common);
-			commandList->writeTexture(s_Data->whiteTexture, 0, 0, &whiteImage, 4);
-			commandList->setPermanentTextureState(s_Data->whiteTexture, nvrhi::ResourceStates::ShaderResource);
-			commandList->commitBarriers();
+			cl->beginTrackingTextureState(s_Data->whiteTexture, nvrhi::AllSubresources, nvrhi::ResourceStates::Common);
+			cl->writeTexture(s_Data->whiteTexture, 0, 0, &whiteImage, 4);
+			cl->setPermanentTextureState(s_Data->whiteTexture, nvrhi::ResourceStates::ShaderResource);
+			cl->commitBarriers();
 
 			auto ind = s_Data->descriptorTableManager.CreateDescriptor(nvrhi::BindingSetItem::Texture_SRV(0, s_Data->whiteTexture));
 		}
 
 		//auto filePath = Plugins::GetPlugin(Hash(std::string_view("Tiny2D")))->AssetsDirectory() / "Fonts" / "OpenSans-Bold.ttf";
 		//s_Data->defaultFont = LoadFont(device, commandList, filePath);
-		s_Data->defaultFont = LoadFontFromMemory(device, commandList, OpenSans_Regular_ttf, OpenSans_Regular_ttf_len);
+		s_Data->defaultFont = LoadFontFromMemory(device, cl, OpenSans_Regular_ttf, OpenSans_Regular_ttf_len);
 
-		commandList->close();
-		device->executeCommandList(commandList);
+		cl->close();
+		device->executeCommandList(cl);
 	}
-
-	s_Data->line.Init(device);
-	s_Data->sprite.Init(device, s_Data->spriteVertexShader);
-	s_Data->circle.Init(device, s_Data->circleVertexShader);
-	s_Data->text.Init(device, s_Data->textVertexShader);
-	s_Data->box.Init(device, s_Data->boxVertexShader);
 }
 
 void Tiny2D::Shutdown()
@@ -1112,111 +1096,170 @@ void Tiny2D::Shutdown()
 	delete s_Data;
 }
 
-void Tiny2D::BeginScene(nvrhi::CommandListHandle commandList, const ViewDesc& desc)
+void Tiny2D::BeginScene(Tiny2D::ViewHandle& viewHandle, nvrhi::ICommandList* commandList, const ViewDesc& desc)
 {
 	HE_PROFILE_SCOPE_NC("Tiny2D::BeginScene", RENDERING_COLOR);
 
-	if (!s_Data->framebuffer)
+	s_Data->commandList = commandList;
+	
+	if(!viewHandle)
 	{
-		s_Data->framebuffer.Init(s_Data->device, { desc.viewSize.x, desc.viewSize.y }, desc.renderTargetColorFormat, desc.sampleCount);
+		auto viewData = new ViewData();
+		viewHandle = HE::Ref<ViewData>(viewData);
+
+		viewData->line.Init(s_Data->device, s_Data->lineVertexShader);
+		viewData->sprite.Init(s_Data->device, s_Data->spriteVertexShader);
+		viewData->circle.Init(s_Data->device, s_Data->circleVertexShader);
+		viewData->text.Init(s_Data->device, s_Data->textVertexShader);
+		viewData->box.Init(s_Data->device, s_Data->boxVertexShader);
+	}
+
+	ViewData* viewData = (ViewData*)viewHandle.get();
+
+	s_Data->fd = viewData;
+
+	if (!viewData->viewBuffer)
+	{
+		viewData->viewBuffer = s_Data->device->createBuffer(nvrhi::utils::CreateVolatileConstantBufferDesc(sizeof(ViewBuffer), "ViewBuffer", sizeof(ViewBuffer)));
+		HE_VERIFY(viewData->viewBuffer);
+	}
+
+	if (!viewData->framebuffer)
+	{
+		viewData->framebuffer.Init(s_Data->device, { desc.viewSize.x, desc.viewSize.y }, desc.renderTargetColorFormat, desc.sampleCount);
 	}
 
 	// resize
-	const auto& rt = s_Data->framebuffer.color->getDesc();
+	const auto& rt = viewData->framebuffer.color->getDesc();
 	if (rt.width != desc.viewSize.x || rt.height != desc.viewSize.y)
 	{
-		s_Data->line.pso.Reset();
-		s_Data->sprite.pso.Reset();
-		s_Data->circle.pso.Reset();
-		s_Data->text.pso.Reset();
-		s_Data->box.pso.Reset();
+		viewData->line.pso.Reset();
+		viewData->sprite.pso.Reset();
+		viewData->circle.pso.Reset();
+		viewData->text.pso.Reset();
+		viewData->box.pso.Reset();
 
-		s_Data->framebuffer.Init(s_Data->device, { desc.viewSize.x, desc.viewSize.y }, desc.renderTargetColorFormat, desc.sampleCount);
+		viewData->framebuffer.Init(s_Data->device, { desc.viewSize.x, desc.viewSize.y }, desc.renderTargetColorFormat, desc.sampleCount);
 	}
 
-	s_Data->framebuffer.Clear(commandList);
-	s_Data->commandList = commandList;
+	viewData->framebuffer.Clear(commandList);
 
 	{
 		ViewBuffer viewBuffer = {};
 		viewBuffer.ViewProjMatrix = desc.viewProj;
 		viewBuffer.viewSize = desc.viewSize;
-		commandList->writeBuffer(s_Data->viewBuffer, &viewBuffer, sizeof(ViewBuffer));
+		commandList->writeBuffer(viewData->viewBuffer, &viewBuffer, sizeof(ViewBuffer));
 	}
 
 	{
-		s_Data->stats.quadCount = s_Data->sprite.instanceCount + s_Data->circle.instanceCount + s_Data->text.instanceCount;
-		s_Data->stats.boxCount = s_Data->box.instanceCount;
-		s_Data->stats.LineCount = s_Data->line.vertexCount / 2;
+		viewData->stats.quadCount = viewData->sprite.instanceCount + viewData->circle.instanceCount + viewData->text.instanceCount;
+		viewData->stats.boxCount = viewData->box.instanceCount;
+		viewData->stats.LineCount = viewData->line.vertexCount / 2;
 
-		s_Data->line.Begin();
-		s_Data->sprite.Begin();
-		s_Data->circle.Begin();
-		s_Data->text.Begin();
-		s_Data->box.Begin();
+		viewData->line.Begin();
+		viewData->sprite.Begin();
+		viewData->circle.Begin();
+		viewData->text.Begin();
+		viewData->box.Begin();
 	}
 }
 
 void Tiny2D::EndScene()
 {
 	HE_PROFILE_SCOPE_NC("Tiny2D::EndScene", RENDERING_COLOR);
-	
-	s_Data->line.End(
-		s_Data->commandList, 
-		s_Data->bindingLayout, 
-		s_Data->bindingSets,
-		s_Data->framebuffer
+
+	ViewData* viewData = s_Data->fd;
+
+	if(!viewData->bindingSet)
+	{
+		nvrhi::BindingSetDesc desc;
+		desc.bindings = {
+			nvrhi::BindingSetItem::ConstantBuffer(0, viewData->viewBuffer),
+			nvrhi::BindingSetItem::Sampler(0, s_Data->sampler)
+		};
+
+		viewData->bindingSet = s_Data->device->createBindingSet(desc, s_Data->bindingLayout);
+		HE_VERIFY(viewData->bindingSet);
+	}
+
+	viewData->line.End(
+		s_Data->commandList,
+		s_Data->bindingLayout,
+		viewData->bindingSet,
+		viewData->framebuffer,
+		s_Data->lineVertexShader,
+		s_Data->linePixelShader,
+		s_Data->lineGeoShader
 	);
 
-	s_Data->sprite.End(
+	viewData->sprite.End(
 		s_Data->commandList,
 		{ s_Data->bindingLayout ,s_Data->bindlessLayout },
-		{ s_Data->bindingSets, s_Data->descriptorTableManager.descriptorTable.Get() },
-		s_Data->framebuffer,
+		{ viewData->bindingSet, s_Data->descriptorTableManager.descriptorTable.Get() },
+		viewData->framebuffer,
 		s_Data->spriteVertexShader, s_Data->spritePixelShader, nullptr
 	);
-
-	s_Data->circle.End(
+	
+	viewData->circle.End(
 		s_Data->commandList,
 		{ s_Data->bindingLayout },
-		{ s_Data->bindingSets },
-		s_Data->framebuffer,
+		{ viewData->bindingSet },
+		viewData->framebuffer,
 		s_Data->circleVertexShader, s_Data->circlePixelShader, nullptr
 	);
-
-	s_Data->text.End(
+	
+	viewData->text.End(
 		s_Data->commandList,
 		{ s_Data->bindingLayout ,s_Data->bindlessLayout },
-		{ s_Data->bindingSets, s_Data->descriptorTableManager.descriptorTable.Get() },
-		s_Data->framebuffer,
+		{ viewData->bindingSet, s_Data->descriptorTableManager.descriptorTable.Get() },
+		viewData->framebuffer,
 		s_Data->textVertexShader, s_Data->textPixelShader, nullptr
 	);
-
-	s_Data->box.End(
+	
+	viewData->box.End(
 		s_Data->commandList,
 		{ s_Data->bindingLayout },
-		{ s_Data->bindingSets },
-		s_Data->framebuffer,
+		{ viewData->bindingSet },
+		viewData->framebuffer,
 		s_Data->boxVertexShader, s_Data->boxPixelShader, nullptr,
 		36
 	);
 
-	if (s_Data->framebuffer.color->getDesc().sampleCount > 1)
+	if (viewData->framebuffer.color->getDesc().sampleCount > 1)
 	{
 		auto subresources = nvrhi::TextureSubresourceSet(0, 1, 0, 1);
 		s_Data->commandList->resolveTexture(
-			s_Data->framebuffer.resolvedColor,
+			viewData->framebuffer.resolvedColor,
 			subresources,
-			s_Data->framebuffer.color,
+			viewData->framebuffer.color,
 			subresources
 		);
 	}
+
+	s_Data->fd = nullptr;
+	s_Data->commandList = nullptr;
 }
 
-nvrhi::ITexture* Tiny2D::GetColorTarget() { return s_Data->framebuffer.resolvedColor; }
-nvrhi::ITexture* Tiny2D::GetDepthTarget() { return s_Data->framebuffer.depth; }
+nvrhi::ITexture* Tiny2D::GetColorTarget(ViewHandle viewHandle)
+{
+	ViewData* viewData = (ViewData*)viewHandle.get();
 
-const Tiny2D::Stats& Tiny2D::GetStats() { HE_CORE_VERIFY(s_Data); return s_Data->stats; }
+	return viewData->framebuffer.resolvedColor; 
+}
+
+nvrhi::ITexture* Tiny2D::GetDepthTarget(ViewHandle viewHandle)
+{
+	ViewData* viewData = (ViewData*)viewHandle.get();
+
+	return viewData->framebuffer.depth; 
+}
+
+const Tiny2D::Stats& Tiny2D::GetStats(ViewHandle viewHandle)
+{
+	ViewData* viewData = (ViewData*)viewHandle.get();
+	
+	return viewData->stats;
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Draw
@@ -1245,7 +1288,7 @@ Math::float4x4 ConstructTransformMatrix(const Math::vec3& position, const Math::
 
 void Tiny2D::DrawLine(const LineDesc& desc)
 {
-	auto& lins = s_Data->line;
+	auto& lins = s_Data->fd->line;
 
 	if (lins.vertexCount >= lins.maxLinesCount * 2)
 		lins.ResizeBuffer();
@@ -1267,7 +1310,7 @@ void Tiny2D::DrawLineList(Math::float3* points, uint32_t size, const Math::float
 {
 	HE_ASSERT(points);
 
-	auto& lines = s_Data->line;
+	auto& lines = s_Data->fd->line;
 
 	uint32_t requiredSize = lines.vertexCount + size;
 	if (requiredSize >= lines.maxLinesCount * 2)
@@ -1304,7 +1347,7 @@ void Tiny2D::DrawLineStrip(Math::float3* points, uint32_t size, const Math::floa
 {
 	HE_ASSERT(points);
 
-	auto& lines = s_Data->line;
+	auto& lines = s_Data->fd->line;
 
 	uint32_t requiredSize = lines.vertexCount + size;
 	if (requiredSize >= lines.maxLinesCount * 2)
@@ -1403,7 +1446,7 @@ void Tiny2D::DrawAABB(const AABBDesc& aabb)
 
 void Tiny2D::DrawBox(const Tiny2D::BoxDesc& desc)
 {
-	auto& box = s_Data->box;
+	auto& box = s_Data->fd->box;
 
 	if (box.instanceCount >= box.maxInstanceCount)
 		box.ResizeBuffer();
@@ -1422,7 +1465,7 @@ void Tiny2D::DrawQuad(const Tiny2D::QuadDesc& desc)
 {
 	int textureID = desc.texture ? s_Data->descriptorTableManager.CreateDescriptor(nvrhi::BindingSetItem::Texture_SRV(0, desc.texture)) : 0;
 
-	auto& sprite = s_Data->sprite;
+	auto& sprite = s_Data->fd->sprite;
 
 	if (sprite.instanceCount >= sprite.maxInstanceCount)
 		sprite.ResizeBuffer();
@@ -1442,7 +1485,7 @@ void Tiny2D::DrawQuad(const Tiny2D::QuadDesc& desc)
 
 void Tiny2D::DrawCircle(const Tiny2D::CircleDesc& desc)
 {
-	auto& circle = s_Data->circle;
+	auto& circle = s_Data->fd->circle;
 
 	if (circle.instanceCount >= circle.maxInstanceCount)
 		circle.ResizeBuffer();
@@ -1463,7 +1506,7 @@ void Tiny2D::DrawText(const TextDesc& desc)
 	auto& font = s_Data->defaultFont;
 	if (!font) return;
 
-	auto& text = s_Data->text;
+	auto& text = s_Data->fd->text;
 
 	uint32_t requiredSize = text.instanceCount + (uint32_t)desc.text.size();
 	if (requiredSize >= text.maxInstanceCount)
