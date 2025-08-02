@@ -17,6 +17,7 @@ struct VertexOutput
 	float4 position : SV_POSITION;
 	float4 color : COLOR;
 	int    textureID : TEXTUREID;
+	uint   id : ENTITYID;
 	float2 uv : TEXCOORD0;
 };
 
@@ -41,7 +42,8 @@ VertexOutput main_vs(
 	in float4 uv : UV,
 	in float4 color : COLOR,
 	in int    textureID : TEXTUREID,
-	uint   vertexID : SV_VertexID
+	in uint   id : ENTITYID,
+	uint      vertexID : SV_VertexID
 )
 {
 	float4x4 transform = ConstructTransformMatrix(position, rotation, scale);
@@ -50,6 +52,7 @@ VertexOutput main_vs(
 	output.position = mul(mul(viewParms.viewProjMatrix, transform), float4(s_QuadVertices[vertexID].position, 1.0));
 	output.color = color;
 	output.textureID = textureID;
+	output.id = id;
 
 	switch (vertexID)					   //   0, 4         1
 	{									   //	uv.xy        uv.zy
@@ -68,9 +71,12 @@ SamplerState s_Sampler : register(s0);
 
 void main_ps(
 	in VertexOutput input,
-	out float4 color : SV_Target0
+	out float4 color : SV_Target0,
+	out uint   ids : SV_Target1
 )
 {
 	Texture2D diffuseTexture = t_BindlessTextures[input.textureID];
 	color = input.color * diffuseTexture.Sample(s_Sampler, input.uv);
+
+	ids = input.id;
 }

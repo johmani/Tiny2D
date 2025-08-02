@@ -209,6 +209,7 @@ struct Framebuffer
 	nvrhi::TextureHandle color;
 	nvrhi::TextureHandle depth;
 	nvrhi::TextureHandle resolvedColor;
+	nvrhi::TextureHandle entitiesID;
 	
 	operator bool() const { return  framebufferHandle; }
 	operator nvrhi::IFramebuffer*() const { return framebufferHandle.Get(); }
@@ -218,6 +219,7 @@ struct Framebuffer
 		color.Reset();
 		resolvedColor.Reset();
 		depth.Reset();
+		entitiesID.Reset();
 		framebufferHandle.Reset();
 	}
 
@@ -244,6 +246,13 @@ struct Framebuffer
 			desc.debugName = "color";
 			color = device->createTexture(desc);
 			HE_VERIFY(color);
+		}
+
+		{
+			desc.format = nvrhi::Format::R32_UINT;
+			desc.debugName = "entitiesID";
+			entitiesID = device->createTexture(desc);
+			HE_VERIFY(entitiesID);
 		}
 
 		{
@@ -288,6 +297,7 @@ struct Framebuffer
 		{
 			nvrhi::FramebufferDesc fbDesc;
 			fbDesc.addColorAttachment(color);
+			fbDesc.addColorAttachment(entitiesID);
 			fbDesc.setDepthAttachment(depth);
 			framebufferHandle = device->createFramebuffer(fbDesc);
 			HE_VERIFY(framebufferHandle);
@@ -593,6 +603,7 @@ struct spriteAttributes
 	glm::vec4 uv;
 	Math::float4 color;
 	uint32_t textureID;
+	uint32_t id;
 
 	static std::span<nvrhi::VertexAttributeDesc> GetVertexAttributeDesc()
 	{
@@ -600,9 +611,10 @@ struct spriteAttributes
 			{ "POSITION",  nvrhi::Format::RGB32_FLOAT,	1, 0, offsetof(spriteAttributes, position),	 sizeof(spriteAttributes), true },
 			{ "ROTATION",  nvrhi::Format::RGBA32_FLOAT,	1, 1, offsetof(spriteAttributes, rotation),	 sizeof(spriteAttributes), true },
 			{ "SCALE",	   nvrhi::Format::RGB32_FLOAT,	1, 2, offsetof(spriteAttributes, scale),	 sizeof(spriteAttributes), true },
-			{ "UV",		   nvrhi::Format::RGBA32_FLOAT,	1, 3, offsetof(spriteAttributes, uv),		 sizeof(spriteAttributes),   true },
+			{ "UV",		   nvrhi::Format::RGBA32_FLOAT,	1, 3, offsetof(spriteAttributes, uv),		 sizeof(spriteAttributes), true },
 			{ "COLOR",     nvrhi::Format::RGBA32_FLOAT,	1, 4, offsetof(spriteAttributes, color),	 sizeof(spriteAttributes), true },
 			{ "TEXTUREID", nvrhi::Format::R32_SINT,		1, 5, offsetof(spriteAttributes, textureID), sizeof(spriteAttributes), true },
+			{ "ENTITYID",  nvrhi::Format::R32_SINT,		1, 6, offsetof(spriteAttributes, id)       , sizeof(spriteAttributes), true },
 		};
 
 		return attributes;
@@ -616,7 +628,8 @@ struct spriteAttributes
 			{ instanceBuffer, 2, 0 },
 			{ instanceBuffer, 3, 0 },
 			{ instanceBuffer, 4, 0 },
-			{ instanceBuffer, 5, 0 }
+			{ instanceBuffer, 5, 0 },
+			{ instanceBuffer, 6, 0 }
 		};
 	}
 };
@@ -1254,6 +1267,14 @@ nvrhi::ITexture* Tiny2D::GetDepthTarget(ViewHandle viewHandle)
 	return viewData->framebuffer.depth; 
 }
 
+
+nvrhi::ITexture* Tiny2D::GetEntitiesIDTarget(ViewHandle viewHandle)
+{
+	ViewData* viewData = (ViewData*)viewHandle.get();
+
+	return viewData->framebuffer.entitiesID;
+}
+
 const Tiny2D::Stats& Tiny2D::GetStats(ViewHandle viewHandle)
 {
 	ViewData* viewData = (ViewData*)viewHandle.get();
@@ -1477,6 +1498,7 @@ void Tiny2D::DrawQuad(const Tiny2D::QuadDesc& desc)
 		sprite.instanceDataPtr->uv = { desc.minUV.x, desc.minUV.y, desc.maxUV.x, desc.maxUV.y };
 		sprite.instanceDataPtr->color = desc.color;
 		sprite.instanceDataPtr->textureID = textureID;
+		sprite.instanceDataPtr->id = desc.id;
 		sprite.instanceDataPtr++;
 
 		sprite.instanceCount++;

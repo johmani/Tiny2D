@@ -55,6 +55,7 @@ export namespace Tiny2D {
 		Math::float2 maxUV = { 1.0f,1.0f };
 		Math::float4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		nvrhi::ITexture* texture = nullptr;
+		uint32_t id = (uint32_t)-1;
 	};
 		
 	struct CircleDesc
@@ -117,6 +118,7 @@ export namespace Tiny2D {
 	TINY2D_API void EndScene();
 	TINY2D_API nvrhi::ITexture* GetColorTarget(ViewHandle viewHandle);
 	TINY2D_API nvrhi::ITexture* GetDepthTarget(ViewHandle viewHandle);
+	TINY2D_API nvrhi::ITexture* GetEntitiesIDTarget(ViewHandle viewHandle);
 	TINY2D_API const Stats& GetStats(ViewHandle viewHandle);
 
 	TINY2D_API void DrawLine(const LineDesc& desc);
