@@ -310,6 +310,7 @@ struct Framebuffer
 
 		commandList->clearDepthStencilTexture(depth, nvrhi::AllSubresources, true, 1.0f, depthFormatInfo.hasStencil, 0);
 		commandList->clearTextureFloat(color, nvrhi::AllSubresources, nvrhi::Color(0.f));
+		commandList->clearTextureUInt(entitiesID, nvrhi::AllSubresources, ~0u);
 	}
 };
 
