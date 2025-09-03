@@ -5,21 +5,24 @@ import Math;
 import nvrhi;
 import std;
 
-#if defined(TINY2D_BUILD_SHAREDLIB)
-#   if defined(_MSC_VER)
-#       define TINY2D_API __declspec(dllexport)
-#   elif defined(__GNUC__)
-#       define HYDRA_API __attribute__((visibility("default")))
-#   else
-#       define TINY2D_API
-#       pragma warning "Unknown dynamic link import/export semantics."
+#if defined(TINY2D_AS_SHAREDLIB) 
+#   if defined(TINY2D_BUILD) 
+#       if defined(_MSC_VER)
+#           define TINY2D_API __declspec(dllexport)
+#       elif defined(__GNUC__)
+#           define TINY2D_API __attribute__((visibility("default")))
+#       else
+#           define TINY2D_API
+#       endif
+#   else 
+#       if defined(_MSC_VER)
+#           define TINY2D_API __declspec(dllimport)
+#       else
+#           define TINY2D_API
+#       endif
 #   endif
 #else
-#   if defined(_MSC_VER)
-#       define TINY2D_API __declspec(dllimport)
-#   else
-#       define TINY2D_API
-#   endif
+#  define TINY2D_API
 #endif
 
 struct ViewData;

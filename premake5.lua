@@ -28,7 +28,8 @@ project "Tiny2D"
     
     defines
     {
-        "TINY2D_BUILD_SHAREDLIB",
+        "TINY2D_AS_SHAREDLIB",
+        "TINY2D_BUILD",
     }
 
     includedirs
