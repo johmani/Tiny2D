@@ -1287,6 +1287,12 @@ const Tiny2D::Stats& Tiny2D::GetStats(ViewHandle viewHandle)
 // Draw
 //////////////////////////////////////////////////////////////////////////
 
+static Math::float3 Transform(const Math::float3& v, Math::float4x4 wt)
+{
+	glm::vec4 t = wt * glm::vec4(v.x, v.y, v.z, 1.0f);
+	return Math::float3{ t.x, t.y, t.z };
+}
+
 Math::float4x4 ConstructTransformMatrix(const Math::vec3& position, const Math::quat& rotation, const Math::vec3& scale)
 {
 	Math::float3x3 rotationMatrix = Math::float3x3(rotation);
@@ -1441,6 +1447,170 @@ void Tiny2D::DrawWireBox(const WireBoxDesc& desc)
 	};
 
 	Tiny2D::DrawLineList(boxLines, desc.color, desc.thickness);
+}
+
+void Tiny2D::DrawWireSphere(const WireSphereDesc& desc)
+{
+	Tiny2D::DrawCircle({
+		.position = desc.position,
+		.rotation = desc.rotation,
+		.radius = desc.radius,
+		.color = desc.color,
+		.thickness = desc.thickness,
+	});
+
+	Tiny2D::DrawCircle({
+		.position = desc.position,
+		.rotation = desc.rotation * Math::angleAxis(Math::half_pi<float>(), Math::float3(1.0f, 0.0f, 0.0f)),
+		.radius = desc.radius,
+		.color = desc.color,
+		.thickness = desc.thickness,
+	});
+
+	Tiny2D::DrawCircle({
+		.position = desc.position,
+		.rotation = desc.rotation * Math::angleAxis(Math::half_pi<float>(), Math::float3(0.0f, 1.0f, 0.0f)),
+		.radius = desc.radius,
+		.color = desc.color,
+		.thickness = desc.thickness,
+	});
+}
+
+void Tiny2D::DrawWireCylinder(const WireCylinderDesc& desc)
+{
+	float r = desc.radius;
+	float halfHeight = desc.height * 0.5f;
+
+	Math::float3 topPos = desc.position + desc.rotation * Math::float3(0, halfHeight, 0);
+	Math::float3 bottomPos = desc.position + desc.rotation * Math::float3(0, -halfHeight, 0);
+	Math::float3 up = Math::normalize(topPos - bottomPos);
+	Math::float3 temp = (fabs(up.x) < 0.99f) ? Math::float3(1, 0, 0) : Math::float3(0, 0, 1);
+	Math::float3 right = Math::normalize(Math::cross(up, temp));
+	Math::float3 forward = Math::normalize(Math::cross(right, up));
+
+	{
+		Math::float3 p[8] = {
+			topPos + right * r, bottomPos + right * r,
+			topPos + forward * r, bottomPos + forward * r,
+			topPos - right * r, bottomPos - right * r,
+			topPos - forward * r, bottomPos - forward * r
+		};
+
+		Tiny2D::DrawLineList(p, desc.color);
+	}
+
+	auto drawFullCircle = [&](Math::float3 center, Math::float3 axis) {
+		Math::float3 points[33];
+
+		Math::float3 tangent = Math::normalize(Math::cross(axis, right));
+		if (Math::length2(tangent) < 1e-4f) tangent = Math::normalize(Math::cross(axis, forward));
+		Math::float3 bitangent = Math::normalize(Math::cross(axis, tangent));
+
+		float step = Math::two_pi<float>() / 32;
+		
+		for (int i = 0; i <= 32; i++)
+			points[i] = center + (cos(i * step) * tangent + sin(i * step) * bitangent) * r;
+
+		Tiny2D::DrawLineStrip(points, desc.color);
+	};
+
+	drawFullCircle(topPos, up);
+	drawFullCircle(bottomPos, up);
+}
+
+void Tiny2D::DrawWireCapsule(const WireCapsuleDesc& desc)
+{
+	float r = desc.radius;
+	float halfHeight = desc.height * 0.5f;
+
+	Math::float3 topPos = desc.position + desc.rotation * Math::float3(0, halfHeight, 0);
+	Math::float3 bottomPos = desc.position + desc.rotation * Math::float3(0, -halfHeight, 0);
+	Math::float3 up = Math::normalize(topPos - bottomPos);
+	Math::float3 temp = (fabs(up.x) < 0.99f) ? Math::float3(1, 0, 0) : Math::float3(0, 0, 1);
+	Math::float3 right = Math::normalize(Math::cross(up, temp));
+	Math::float3 forward = Math::normalize(Math::cross(right, up));
+
+	{
+		Math::float3 p[8] = {
+			topPos + right * r, bottomPos + right * r,
+			topPos + forward * r, bottomPos + forward * r,
+			topPos - right * r, bottomPos - right * r,
+			topPos - forward * r, bottomPos - forward * r
+		};
+		Tiny2D::DrawLineList(p, desc.color);
+	}
+
+	auto drawFullCircle = [&](Math::float3 center, Math::float3 axis) {
+
+		Math::float3 points[33];
+
+		Math::float3 tangent = Math::normalize(Math::cross(axis, right));
+		if (Math::length2(tangent) < 1e-4f) tangent = Math::normalize(Math::cross(axis, forward));
+		Math::float3 bitangent = Math::normalize(Math::cross(axis, tangent));
+
+		float step = Math::two_pi<float>() / 32;
+
+		for (int i = 0; i <= 32; i++)
+			points[i] = center + (cos(i * step) * tangent + sin(i * step) * bitangent) * r;
+
+		Tiny2D::DrawLineStrip(points, desc.color);
+	};
+
+	drawFullCircle(topPos, up);
+	drawFullCircle(bottomPos, up);
+
+	auto drawHalfCircle = [&](Math::float3 axis) {
+		
+		Math::float3 points[17];
+		Math::float3 tangent = Math::normalize(Math::cross(axis, up));
+		if (Math::length2(tangent) < 1e-4f) tangent = Math::normalize(Math::cross(axis, right));
+		Math::float3 bitangent = Math::normalize(Math::cross(axis, tangent));
+		
+		float step = Math::two_pi<float>() / 32;
+
+		for (int i = 32; i >= 16; i--)
+			points[32 - i] = topPos + (cos(i * step) * tangent + sin(i * step) * bitangent) * r;
+		
+		Tiny2D::DrawLineStrip(points, desc.color);
+
+		for (int i = 0; i < 17; i++)
+			points[i] = bottomPos + (cos(i * step) * tangent + sin(i * step) * bitangent) * r;
+		
+		Tiny2D::DrawLineStrip(points, desc.color);
+	};
+
+	drawHalfCircle(right);
+	drawHalfCircle(forward);
+}
+
+void Tiny2D::DrawMeshWireframe(Math::float4x4 wt, const Math::float3* vertices, size_t vertexCount, const uint32_t* indices, size_t indexCount, const Math::vec4& color)
+{
+	if (indices && indexCount >= 3)
+	{
+		for (size_t i = 0; i < indexCount; i += 3)
+		{
+			Math::float3 a = Transform(vertices[indices[i + 0]], wt);
+			Math::float3 b = Transform(vertices[indices[i + 1]], wt);
+			Math::float3 c = Transform(vertices[indices[i + 2]], wt);
+
+			Tiny2D::DrawLine({ .from = a, .to = b, .fromColor = color, .toColor = color });
+			Tiny2D::DrawLine({ .from = b, .to = c, .fromColor = color, .toColor = color });
+			Tiny2D::DrawLine({ .from = c, .to = a, .fromColor = color, .toColor = color });
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i + 2 < vertexCount; i += 3)
+		{
+			Math::float3 a = Transform(vertices[i + 0], wt);
+			Math::float3 b = Transform(vertices[i + 1], wt);
+			Math::float3 c = Transform(vertices[i + 2], wt);
+
+			Tiny2D::DrawLine({ .from = a, .to = b, .fromColor = color, .toColor = color });
+			Tiny2D::DrawLine({ .from = b, .to = c, .fromColor = color, .toColor = color });
+			Tiny2D::DrawLine({ .from = c, .to = a, .fromColor = color, .toColor = color });
+		}
+	}
 }
 
 void Tiny2D::DrawAABB(const AABBDesc& aabb)

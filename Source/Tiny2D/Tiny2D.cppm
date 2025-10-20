@@ -65,7 +65,7 @@ export namespace Tiny2D {
 	{
 		Math::float3 position = { 0.0f, 0.0f, 0.0f };
 		Math::quat rotation = { 1.0f, 0.0f, 0.0f ,0.0f };
-		float radius = 1.0f;
+		float radius = 0.5f;
 		Math::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		float thickness = 0.02f;
 		float smoothness = 0.005f;
@@ -78,6 +78,35 @@ export namespace Tiny2D {
 		Math::float3 scale = { 1.0f, 1.0f, 1.0f };
 		Math::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		float thickness = 1.0f;
+	};
+
+	struct WireSphereDesc
+	{
+		Math::float3 position = { 0.0f,0.0f ,0.0f };
+		Math::quat rotation = { 1.0f, 0.0f,0.0f ,0.0f };
+		float radius = 0.5f;
+		Math::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+		float thickness = 0.01f;
+	};
+
+	struct WireCylinderDesc
+	{
+		Math::float3 position = { 0.0f,0.0f ,0.0f };
+		Math::quat rotation = { 1.0f, 0.0f,0.0f ,0.0f };
+		float radius = 0.5f;
+		float height = 1.0f;
+		Math::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+		float thickness = 0.01f;
+	};
+	
+	struct WireCapsuleDesc
+	{
+		Math::float3 position = { 0.0f,0.0f ,0.0f };
+		Math::quat rotation = { 1.0f, 0.0f,0.0f ,0.0f };
+		float radius = 0.5f;
+		float height = 1.0f;
+		Math::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+		float thickness = 0.01f;
 	};
 
 	struct AABBDesc
@@ -132,7 +161,13 @@ export namespace Tiny2D {
 	TINY2D_API void DrawCircle(const CircleDesc& desc);
 	TINY2D_API void DrawQuad(const QuadDesc& desc);
 	TINY2D_API void DrawText(const TextDesc& desc);
-	TINY2D_API void DrawWireBox(const WireBoxDesc& desc = WireBoxDesc());
+	
+	TINY2D_API void DrawWireBox(const WireBoxDesc& desc);
+	TINY2D_API void DrawWireSphere(const WireSphereDesc& desc);
+	TINY2D_API void DrawWireCylinder(const WireCylinderDesc& desc);
+	TINY2D_API void DrawWireCapsule(const WireCapsuleDesc& desc);
+	TINY2D_API void DrawMeshWireframe(Math::float4x4 wt, const Math::float3* vertices, size_t vertexCount, const uint32_t* indices = nullptr, size_t indexCount = 0, const Math::float4& color = Math::float4(1));
+
 	TINY2D_API void DrawAABB(const AABBDesc& desc);
 	TINY2D_API void DrawBox(const BoxDesc& desc);
 };

@@ -43,7 +43,7 @@ VertexOutput main_vs(
 	uint vertexID : SV_VertexID
 )
 {
-	float4x4 transform = ConstructTransformMatrix(position, rotation, radius);
+	float4x4 transform = ConstructTransformMatrix(position, rotation, radius * 2.0f);
 	
 	VertexOutput output;
 	output.position = mul(mul(viewParms.viewProjMatrix, transform), float4(s_QuadVertices[vertexID].position,1.0));
