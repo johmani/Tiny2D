@@ -1,9 +1,9 @@
-
-export module Tiny2D;
-import HE;
-import Math;
-import nvrhi;
-import std;
+#ifndef CPP_MODULE
+	#include "HydraEngine/HydraEngine.h"
+	#define EXPORT_CPPM
+#else
+	#define EXPORT_CPPM export
+#endif
 
 #if defined(TINY2D_AS_SHAREDLIB) 
 #   if defined(TINY2D_BUILD) 
@@ -27,7 +27,7 @@ import std;
 
 struct ViewData;
 
-export namespace Tiny2D {
+EXPORT_CPPM namespace Tiny2D {
 
 	using std::uint32_t;
 	using std::uint8_t;

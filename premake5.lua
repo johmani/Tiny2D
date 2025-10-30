@@ -18,6 +18,9 @@ project "Tiny2D"
         "Source/Tiny2D/**.h",
         "Source/Tiny2D/**.cpp",
         "Source/Tiny2D/**.cppm",
+
+        "Include/**.h",
+        "Include/**.cppm",
         
         "Source/Shaders/**.hlsl",
         "Source/Shaders/**.h",
@@ -34,7 +37,7 @@ project "Tiny2D"
 
     includedirs
     {
-       "Source/Tiny2D",
+       "Include",
        "ThirdParty/msdf-atlas-gen/msdf-atlas-gen",
        "ThirdParty/msdf-atlas-gen/msdfgen",
     }
