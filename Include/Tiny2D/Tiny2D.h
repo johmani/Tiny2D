@@ -1,5 +1,7 @@
+#pragma once
+
 #ifndef CPP_MODULE
-	#include "HydraEngine/HydraEngine.h"
+    #include "HydraEngine/HydraEngine.h"
 	#define EXPORT_CPPM
 #else
 	#define EXPORT_CPPM export
