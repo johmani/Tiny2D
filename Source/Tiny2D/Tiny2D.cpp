@@ -1,7 +1,7 @@
 module;
 
 #undef NVRHI_HAS_D3D11
-#include <HydraEngine/Base.h>
+#include <Core/Base.h>
 #undef INFINITE
 #include "msdf-atlas-gen.h"
 
@@ -49,7 +49,7 @@ module;
 
 module Tiny2D;
 
-import HE;
+import Core;
 import std;
 import Math;
 import nvrhi;
@@ -61,7 +61,7 @@ import nvrhi;
 
 #define RENDERING_COLOR 0x0000ffff
 
-using namespace HE;
+using namespace Core;
 
 //////////////////////////////////////////////////////////////////////////
 // Descriptor Table Manager
@@ -245,14 +245,14 @@ struct Framebuffer
 			desc.format = colorFormat;
 			desc.debugName = "color";
 			color = device->createTexture(desc);
-			HE_VERIFY(color);
+			CORE_VERIFY(color);
 		}
 
 		{
 			desc.format = nvrhi::Format::R32_UINT;
 			desc.debugName = "entitiesID";
 			entitiesID = device->createTexture(desc);
-			HE_VERIFY(entitiesID);
+			CORE_VERIFY(entitiesID);
 		}
 
 		{
@@ -274,7 +274,7 @@ struct Framebuffer
 			desc.clearValue = nvrhi::Color(1.0f);
 			desc.debugName = "Depth";
 			depth = device->createTexture(desc);
-			HE_VERIFY(depth);
+			CORE_VERIFY(depth);
 		}
 
 		if(desc.sampleCount > 1)
@@ -287,7 +287,7 @@ struct Framebuffer
 			desc.isTypeless = false;
 			desc.debugName = "ResolvedColor";
 			resolvedColor = device->createTexture(desc);
-			HE_VERIFY(resolvedColor);
+			CORE_VERIFY(resolvedColor);
 		}
 		else
 		{
@@ -300,7 +300,7 @@ struct Framebuffer
 			fbDesc.addColorAttachment(entitiesID);
 			fbDesc.setDepthAttachment(depth);
 			framebufferHandle = device->createFramebuffer(fbDesc);
-			HE_VERIFY(framebufferHandle);
+			CORE_VERIFY(framebufferHandle);
 		}
 	}
 
@@ -349,7 +349,7 @@ Ref<Font> CreateFont(nvrhi::IDevice* device, nvrhi::ICommandList* commandList, m
 	atlasPacker.setMiterLimit(1.0);
 	atlasPacker.setScale(emSize);
 	int remaining = atlasPacker.pack(font->glyphs.data(), (int)font->glyphs.size());
-	HE_ASSERT(remaining == 0);
+	CORE_ASSERT(remaining == 0);
 
 	int width, height;
 	atlasPacker.getDimensions(width, height);
@@ -408,9 +408,9 @@ Ref<Font> CreateFont(nvrhi::IDevice* device, nvrhi::ICommandList* commandList, m
 Ref<Font> LoadFont(nvrhi::IDevice* device, nvrhi::ICommandList* commandList, std::filesystem::path& filePath)
 {
 	msdfgen::FreetypeHandle* ft = msdfgen::initializeFreetype();
-	HE_ASSERT(ft, "Failed to initialize FreeType");
+	CORE_ASSERT(ft, "Failed to initialize FreeType");
 	msdfgen::FontHandle* fontHandle = msdfgen::loadFont(ft, filePath.string().c_str());
-	HE_ASSERT(fontHandle, "Failed to load font data");
+	CORE_ASSERT(fontHandle, "Failed to load font data");
 
 	Ref<Font> font = CreateFont(device, commandList, fontHandle);
 
@@ -423,9 +423,9 @@ Ref<Font> LoadFont(nvrhi::IDevice* device, nvrhi::ICommandList* commandList, std
 Ref<Font> LoadFontFromMemory(nvrhi::IDevice* device, nvrhi::ICommandList* commandList, uint8_t* bytes, int size)
 {
 	msdfgen::FreetypeHandle* ft = msdfgen::initializeFreetype();
-	HE_ASSERT(ft, "Failed to initialize FreeType");
+	CORE_ASSERT(ft, "Failed to initialize FreeType");
 	msdfgen::FontHandle* font = msdfgen::loadFontData(ft, bytes, size);
-	HE_ASSERT(font, "Failed to load font data");
+	CORE_ASSERT(font, "Failed to load font data");
 
 	Ref<Font> fontAsset = CreateFont(device, commandList, font);
 
@@ -488,7 +488,7 @@ struct LinePass
 
 		maxLinesCount = size ? size : maxLinesCount * 2;
 
-		HE_INFO("resize MaxLinesCount LinePass {} -> {}", prevMaxLinesCount, maxLinesCount);
+		LOG_INFO("resize MaxLinesCount LinePass {} -> {}", prevMaxLinesCount, maxLinesCount);
 
 		nvrhi::BufferDesc vertexBufferDesc;
 		vertexBufferDesc.byteSize = sizeof(LineVertex) * maxLinesCount * 2;
@@ -500,7 +500,7 @@ struct LinePass
 		auto newVertexBuffer = device->createBuffer(vertexBufferDesc);
 		auto newMappedBuffer = (LineVertex*)device->mapBuffer(newVertexBuffer, nvrhi::CpuAccessMode::Write);
 
-		HE_ASSERT(newMappedBuffer);
+		CORE_ASSERT(newMappedBuffer);
 
 		std::memcpy(newMappedBuffer, vertexBufferBase, vertexCount);
 		device->unmapBuffer(vertexBuffer);
@@ -531,14 +531,14 @@ struct LinePass
 		nvrhi::IShader* gs
 	)
 	{
-		HE_PROFILE_SCOPE_NC("Tiny2D::LinesPass::End", RENDERING_COLOR);
+		CORE_PROFILE_SCOPE_NC("Tiny2D::LinesPass::End", RENDERING_COLOR);
 
-		HE_ASSERT(commandList);
-		HE_ASSERT(framebuffer);
+		CORE_ASSERT(commandList);
+		CORE_ASSERT(framebuffer);
 
 		Timer t;
 
-		HE_CORE_VERIFY(vertexCount <= maxLinesCount * 2);
+		CORE_VERIFY(vertexCount <= maxLinesCount * 2);
 
 		if (vertexCount <= 0)
 			return;
@@ -568,7 +568,7 @@ struct LinePass
 			};
 
 			pso = device->createGraphicsPipeline(psoDesc, framebuffer);
-			HE_ASSERT(pso);
+			CORE_ASSERT(pso);
 		}
 
 		nvrhi::GraphicsState state;
@@ -751,7 +751,7 @@ struct InstancedPass
 
 	void Init(nvrhi::IDevice* pDevice, nvrhi::IShader* vertexShader)
 	{
-		HE_PROFILE_SCOPE_NC("Tiny2D::InstancedPass::init", RENDERING_COLOR);
+		CORE_PROFILE_SCOPE_NC("Tiny2D::InstancedPass::init", RENDERING_COLOR);
 
 		device = pDevice;
 
@@ -781,7 +781,7 @@ struct InstancedPass
 
 		maxInstanceCount = size ? size : maxInstanceCount * 2;
 
-		HE_INFO("resize maxInstanceCount {} {} -> {}", typeid(T).name(), prevMaxQuadCount, maxInstanceCount);
+		LOG_INFO("resize maxInstanceCount {} {} -> {}", typeid(T).name(), prevMaxQuadCount, maxInstanceCount);
 
 		nvrhi::BufferDesc instanceBufferDesc;
 		instanceBufferDesc.byteSize = sizeof(T) * maxInstanceCount;
@@ -791,10 +791,10 @@ struct InstancedPass
 		instanceBufferDesc.cpuAccess = nvrhi::CpuAccessMode::Write;
 
 		auto newBuffer = device->createBuffer(instanceBufferDesc);
-		HE_ASSERT(newBuffer);
+		CORE_ASSERT(newBuffer);
 
 		auto newMappedBuffer = (T*)device->mapBuffer(newBuffer, nvrhi::CpuAccessMode::Write);
-		HE_ASSERT(newMappedBuffer);
+		CORE_ASSERT(newMappedBuffer);
 
 		std::memcpy(newMappedBuffer, instanceDataBase, instanceCount);
 		device->unmapBuffer(instanceBuffer);
@@ -827,12 +827,12 @@ struct InstancedPass
 		nvrhi::PrimitiveType primType = nvrhi::PrimitiveType::TriangleList
 	)
 	{
-		HE_PROFILE_SCOPE_NC("Tiny2D::InstancedPass::Render", RENDERING_COLOR);
+		CORE_PROFILE_SCOPE_NC("Tiny2D::InstancedPass::Render", RENDERING_COLOR);
 
 		if (!pso)
 		{
 
-			HE_PROFILE_SCOPE_NC("Tiny2D::InstancedPass::CreatePipeline", RENDERING_COLOR);
+			CORE_PROFILE_SCOPE_NC("Tiny2D::InstancedPass::CreatePipeline", RENDERING_COLOR);
 			nvrhi::GraphicsPipelineDesc psoDesc;
 
 			psoDesc.VS = vs;
@@ -877,12 +877,12 @@ struct InstancedPass
 			}
 
 			pso = device->createGraphicsPipeline(psoDesc, fb);
-			HE_ASSERT(pso);
+			CORE_ASSERT(pso);
 		}
 
 		// draw
 		{
-			HE_PROFILE_SCOPE_NC("Tiny2D::InstancedPass::draw", RENDERING_COLOR);
+			CORE_PROFILE_SCOPE_NC("Tiny2D::InstancedPass::draw", RENDERING_COLOR);
 
 			if (instanceCount <= 0)
 				return;
@@ -967,9 +967,9 @@ static RendererData* s_Data = nullptr;
 
 void Tiny2D::Init(nvrhi::IDevice* device)
 {
-	HE_PROFILE_SCOPE_NC("Tiny2D::Init", RENDERING_COLOR);
+	CORE_PROFILE_SCOPE_NC("Tiny2D::Init", RENDERING_COLOR);
 
-	HE_VERIFY(device->getGraphicsAPI() != nvrhi::GraphicsAPI::D3D11,"[Tiny2D] : D3D11 is not supported");
+	CORE_VERIFY(device->getGraphicsAPI() != nvrhi::GraphicsAPI::D3D11,"[Tiny2D] : D3D11 is not supported");
 
 	s_Data = new RendererData();
 	s_Data->device = device;
@@ -994,9 +994,9 @@ void Tiny2D::Init(nvrhi::IDevice* device)
 			s_Data->lineVertexShader = RHI::CreateStaticShader(device, STATIC_SHADER(line_main_vs), nullptr, vsDesc);
 			s_Data->linePixelShader = RHI::CreateStaticShader(device, STATIC_SHADER(line_main_ps), nullptr, psDesc);
 			s_Data->lineGeoShader = RHI::CreateStaticShader(device, STATIC_SHADER(line_main_gs), nullptr, gsDesc);
-			HE_ASSERT(s_Data->lineVertexShader);
-			HE_ASSERT(s_Data->linePixelShader);
-			HE_ASSERT(s_Data->lineGeoShader);
+			CORE_ASSERT(s_Data->lineVertexShader);
+			CORE_ASSERT(s_Data->linePixelShader);
+			CORE_ASSERT(s_Data->lineGeoShader);
 		}
 
 		{
@@ -1004,8 +1004,8 @@ void Tiny2D::Init(nvrhi::IDevice* device)
 			psDesc.debugName = "sprite_ps";
 			s_Data->spriteVertexShader = RHI::CreateStaticShader(device, STATIC_SHADER(sprite_main_vs), nullptr, vsDesc);
 			s_Data->spritePixelShader = RHI::CreateStaticShader(device, STATIC_SHADER(sprite_main_ps), nullptr, psDesc);
-			HE_ASSERT(s_Data->spriteVertexShader);
-			HE_ASSERT(s_Data->spritePixelShader);
+			CORE_ASSERT(s_Data->spriteVertexShader);
+			CORE_ASSERT(s_Data->spritePixelShader);
 		}
 
 		{
@@ -1013,8 +1013,8 @@ void Tiny2D::Init(nvrhi::IDevice* device)
 			psDesc.debugName = "circle_ps";
 			s_Data->circleVertexShader = RHI::CreateStaticShader(device, STATIC_SHADER(circle_main_vs), nullptr, vsDesc);
 			s_Data->circlePixelShader = RHI::CreateStaticShader(device, STATIC_SHADER(circle_main_ps), nullptr, psDesc);
-			HE_ASSERT(s_Data->circleVertexShader);
-			HE_ASSERT(s_Data->circlePixelShader);
+			CORE_ASSERT(s_Data->circleVertexShader);
+			CORE_ASSERT(s_Data->circlePixelShader);
 		}
 
 		{
@@ -1022,8 +1022,8 @@ void Tiny2D::Init(nvrhi::IDevice* device)
 			psDesc.debugName = "text_ps";
 			s_Data->textVertexShader = RHI::CreateStaticShader(device, STATIC_SHADER(text_main_vs), nullptr, vsDesc);
 			s_Data->textPixelShader = RHI::CreateStaticShader(device, STATIC_SHADER(text_main_ps), nullptr, psDesc);
-			HE_ASSERT(s_Data->textVertexShader);
-			HE_ASSERT(s_Data->textPixelShader);
+			CORE_ASSERT(s_Data->textVertexShader);
+			CORE_ASSERT(s_Data->textPixelShader);
 		}
 
 		{
@@ -1031,8 +1031,8 @@ void Tiny2D::Init(nvrhi::IDevice* device)
 			psDesc.debugName = "box_ps";
 			s_Data->boxVertexShader = RHI::CreateStaticShader(device, STATIC_SHADER(box_main_vs), nullptr, vsDesc);
 			s_Data->boxPixelShader = RHI::CreateStaticShader(device, STATIC_SHADER(box_main_ps), nullptr, psDesc);
-			HE_ASSERT(s_Data->boxVertexShader);
-			HE_ASSERT(s_Data->boxPixelShader);
+			CORE_ASSERT(s_Data->boxVertexShader);
+			CORE_ASSERT(s_Data->boxPixelShader);
 		}
 	}
 
@@ -1056,7 +1056,7 @@ void Tiny2D::Init(nvrhi::IDevice* device)
 			.setAllAddressModes(nvrhi::SamplerAddressMode::Wrap)
 			.setMaxAnisotropy(16);
 		s_Data->sampler = device->createSampler(desc);
-		HE_VERIFY(s_Data->sampler);
+		CORE_VERIFY(s_Data->sampler);
 	}
 
 	{
@@ -1067,7 +1067,7 @@ void Tiny2D::Init(nvrhi::IDevice* device)
 			nvrhi::BindingLayoutItem::Sampler(0)
 		};
 		s_Data->bindingLayout = s_Data->device->createBindingLayout(desc);
-		HE_VERIFY(s_Data->bindingLayout);
+		CORE_VERIFY(s_Data->bindingLayout);
 	}
 
 	{
@@ -1104,7 +1104,7 @@ void Tiny2D::Init(nvrhi::IDevice* device)
 
 void Tiny2D::Shutdown()
 {
-	HE_PROFILE_SCOPE_NC("Tiny2D::Shutdown", RENDERING_COLOR);
+	CORE_PROFILE_SCOPE_NC("Tiny2D::Shutdown", RENDERING_COLOR);
 
 	s_Data->device->waitForIdle();
 	delete s_Data;
@@ -1112,14 +1112,14 @@ void Tiny2D::Shutdown()
 
 void Tiny2D::BeginScene(Tiny2D::ViewHandle& viewHandle, nvrhi::ICommandList* commandList, const ViewDesc& desc)
 {
-	HE_PROFILE_SCOPE_NC("Tiny2D::BeginScene", RENDERING_COLOR);
+	CORE_PROFILE_SCOPE_NC("Tiny2D::BeginScene", RENDERING_COLOR);
 
 	s_Data->commandList = commandList;
 	
 	if(!viewHandle)
 	{
 		auto viewData = new ViewData();
-		viewHandle = HE::Ref<ViewData>(viewData);
+		viewHandle = Core::Ref<ViewData>(viewData);
 
 		viewData->line.Init(s_Data->device, s_Data->lineVertexShader);
 		viewData->sprite.Init(s_Data->device, s_Data->spriteVertexShader);
@@ -1135,7 +1135,7 @@ void Tiny2D::BeginScene(Tiny2D::ViewHandle& viewHandle, nvrhi::ICommandList* com
 	if (!viewData->viewBuffer)
 	{
 		viewData->viewBuffer = s_Data->device->createBuffer(nvrhi::utils::CreateVolatileConstantBufferDesc(sizeof(ViewBuffer), "ViewBuffer", sizeof(ViewBuffer)));
-		HE_VERIFY(viewData->viewBuffer);
+		CORE_VERIFY(viewData->viewBuffer);
 	}
 
 	if (!viewData->framebuffer)
@@ -1180,7 +1180,7 @@ void Tiny2D::BeginScene(Tiny2D::ViewHandle& viewHandle, nvrhi::ICommandList* com
 
 void Tiny2D::EndScene()
 {
-	HE_PROFILE_SCOPE_NC("Tiny2D::EndScene", RENDERING_COLOR);
+	CORE_PROFILE_SCOPE_NC("Tiny2D::EndScene", RENDERING_COLOR);
 
 	ViewData* viewData = s_Data->fd;
 
@@ -1193,7 +1193,7 @@ void Tiny2D::EndScene()
 		};
 
 		viewData->bindingSet = s_Data->device->createBindingSet(desc, s_Data->bindingLayout);
-		HE_VERIFY(viewData->bindingSet);
+		CORE_VERIFY(viewData->bindingSet);
 	}
 
 	viewData->line.End(
@@ -1336,7 +1336,7 @@ void Tiny2D::DrawLine(const LineDesc& desc)
 
 void Tiny2D::DrawLineList(Math::float3* points, uint32_t size, const Math::float4& color, float thickness)
 {
-	HE_ASSERT(points);
+	CORE_ASSERT(points);
 
 	auto& lines = s_Data->fd->line;
 
@@ -1347,7 +1347,7 @@ void Tiny2D::DrawLineList(Math::float3* points, uint32_t size, const Math::float
 
 	if (size % 2 != 0)
 	{
-		HE_CORE_WARN("Line lists require an even number of points, The input size is ({}).", size);
+		LOG_CORE_WARN("Line lists require an even number of points, The input size is ({}).", size);
 		return;
 	}
 
@@ -1373,7 +1373,7 @@ void Tiny2D::DrawLineList(std::span<Math::float3> span, const Math::float4& colo
 
 void Tiny2D::DrawLineStrip(Math::float3* points, uint32_t size, const Math::float4& color, float thickness)
 {
-	HE_ASSERT(points);
+	CORE_ASSERT(points);
 
 	auto& lines = s_Data->fd->line;
 
@@ -1383,7 +1383,7 @@ void Tiny2D::DrawLineStrip(Math::float3* points, uint32_t size, const Math::floa
 
 	if (size < 2)
 	{
-		HE_CORE_ERROR("at least 2 points are required, The input size is ({}).", size);
+		LOG_CORE_ERROR("at least 2 points are required, The input size is ({}).", size);
 		return;
 	}
 

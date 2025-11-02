@@ -1,7 +1,7 @@
 #pragma once
 
 #ifndef CPP_MODULE
-    #include "HydraEngine/HydraEngine.h"
+    #include "Core/Core.h"
 	#define EXPORT_CPPM
 #else
 	#define EXPORT_CPPM export
@@ -33,7 +33,7 @@ EXPORT_CPPM namespace Tiny2D {
 
 	using std::uint32_t;
 	using std::uint8_t;
-	typedef HE::Ref<ViewData> ViewHandle;
+	typedef Core::Ref<ViewData> ViewHandle;
 
 	struct Stats
 	{

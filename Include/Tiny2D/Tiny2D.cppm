@@ -1,6 +1,6 @@
 export module Tiny2D;
 
-import HE;
+import Core;
 import Math;
 import nvrhi;
 import std;
