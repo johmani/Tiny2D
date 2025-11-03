@@ -1,3 +1,23 @@
+IncludeDir["Tiny2D"] = "%{HE}/Plugins/Tiny2D/Include"
+
+function Link.Plugin.Tiny2D()
+
+    buildoptions {
+
+        AddProjCppm(HE, "Tiny2D"),
+    }
+
+    includedirs {
+
+        "%{IncludeDir.Tiny2D}",
+    }
+
+    links {
+
+        "Tiny2D",
+    }
+end
+
 group "Plugins/Tiny2D"
 
 include "ThirdParty/msdf-atlas-gen"
@@ -10,8 +30,7 @@ project "Tiny2D"
     targetdir (binOutputDir)
     objdir (IntermediatesOutputDir)
 
-    LinkHydra(includSourceCode)
-    SetHydraFilters()
+    Link.Runtime.Core()
 
     files
     {
