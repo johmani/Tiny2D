@@ -1,11 +1,6 @@
 #pragma once
 
-#ifndef CPP_MODULE
-    #include "Core/Core.h"
-	#define EXPORT_CPPM
-#else
-	#define EXPORT_CPPM export
-#endif
+#include "Core/Core.h"
 
 #if defined(TINY2D_AS_SHAREDLIB) 
 #   if defined(TINY2D_BUILD) 
@@ -29,7 +24,7 @@
 
 struct ViewData;
 
-EXPORT_CPPM namespace Tiny2D {
+namespace Tiny2D {
 
 	using std::uint32_t;
 	using std::uint8_t;

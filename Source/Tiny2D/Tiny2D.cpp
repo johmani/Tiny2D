@@ -1,7 +1,6 @@
-module;
 
 #undef NVRHI_HAS_D3D11
-#include <Core/Base.h>
+#include <Core/Core.h>
 #undef INFINITE
 #include "msdf-atlas-gen.h"
 
@@ -47,12 +46,7 @@ module;
 
 #endif
 
-module Tiny2D;
-
-import Core;
-import std;
-import Math;
-import nvrhi;
+#include "Tiny2D/Tiny2D.h"
 
 #ifdef offsetof
 #undef offsetof

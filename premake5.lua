@@ -2,11 +2,6 @@ IncludeDir["Tiny2D"] = "%{HE}/Plugins/Tiny2D/Include"
 
 function Link.Plugin.Tiny2D()
 
-    buildoptions {
-
-        AddProjCppm(HE, "Tiny2D"),
-    }
-
     includedirs {
 
         "%{IncludeDir.Tiny2D}",
@@ -36,10 +31,8 @@ project "Tiny2D"
     {
         "Source/Tiny2D/**.h",
         "Source/Tiny2D/**.cpp",
-        "Source/Tiny2D/**.cppm",
 
         "Include/**.h",
-        "Include/**.cppm",
         
         "Source/Shaders/**.hlsl",
         "Source/Shaders/**.h",
