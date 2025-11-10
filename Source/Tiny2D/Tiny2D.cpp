@@ -1175,6 +1175,7 @@ void Tiny2D::BeginScene(Tiny2D::ViewHandle& viewHandle, nvrhi::ICommandList* com
 void Tiny2D::EndScene()
 {
 	CORE_PROFILE_SCOPE_NC("Tiny2D::EndScene", RENDERING_COLOR);
+	BUILTIN_PROFILE(s_Data->device, s_Data->commandList, "Tiny2D");
 
 	ViewData* viewData = s_Data->fd;
 
