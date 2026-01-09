@@ -1501,7 +1501,7 @@ void Tiny2D::DrawWireCylinder(const WireCylinderDesc& desc)
 		if (Math::length2(tangent) < 1e-4f) tangent = Math::normalize(Math::cross(axis, forward));
 		Math::float3 bitangent = Math::normalize(Math::cross(axis, tangent));
 
-		float step = Math::two_pi<float>() / 32;
+		constexpr float step = Math::two_pi<float>() / 32.0f;
 		
 		for (int i = 0; i <= 32; i++)
 			points[i] = center + (cos(i * step) * tangent + sin(i * step) * bitangent) * r;
@@ -1543,7 +1543,7 @@ void Tiny2D::DrawWireCapsule(const WireCapsuleDesc& desc)
 		if (Math::length2(tangent) < 1e-4f) tangent = Math::normalize(Math::cross(axis, forward));
 		Math::float3 bitangent = Math::normalize(Math::cross(axis, tangent));
 
-		float step = Math::two_pi<float>() / 32;
+		constexpr float step = Math::two_pi<float>() / 32.0f;
 
 		for (int i = 0; i <= 32; i++)
 			points[i] = center + (cos(i * step) * tangent + sin(i * step) * bitangent) * r;
@@ -1561,7 +1561,7 @@ void Tiny2D::DrawWireCapsule(const WireCapsuleDesc& desc)
 		if (Math::length2(tangent) < 1e-4f) tangent = Math::normalize(Math::cross(axis, right));
 		Math::float3 bitangent = Math::normalize(Math::cross(axis, tangent));
 		
-		float step = Math::two_pi<float>() / 32;
+		constexpr float step = Math::two_pi<float>() / 32.0f;
 
 		for (int i = 32; i >= 16; i--)
 			points[32 - i] = topPos + (cos(i * step) * tangent + sin(i * step) * bitangent) * r;
