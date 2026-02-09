@@ -561,7 +561,7 @@ struct LinePass
 				},
 			};
 
-			pso = device->createGraphicsPipeline(psoDesc, framebuffer);
+			pso = device->createGraphicsPipeline(psoDesc, framebuffer->getFramebufferInfo());
 			CORE_ASSERT(pso);
 		}
 
@@ -825,7 +825,6 @@ struct InstancedPass
 
 		if (!pso)
 		{
-
 			CORE_PROFILE_SCOPE_NC("Tiny2D::InstancedPass::CreatePipeline", RENDERING_COLOR);
 			nvrhi::GraphicsPipelineDesc psoDesc;
 
@@ -870,7 +869,7 @@ struct InstancedPass
 				}
 			}
 
-			pso = device->createGraphicsPipeline(psoDesc, fb);
+			pso = device->createGraphicsPipeline(psoDesc, fb->getFramebufferInfo());
 			CORE_ASSERT(pso);
 		}
 
